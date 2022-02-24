@@ -1,0 +1,47 @@
+---
+- hosts: ubuntu
+  become: yes
+  become_user: root
+  tasks:
+
+    - name: DB erzeugen
+      docker_container:
+        name: heimdatenbank
+        image: mysql:latest
+        state: started
+        ports:
+          - 192.168.178.101:3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: Schmetterl1ng
+          MYSQL_DATABASE: wordpress
+        volumes:
+          heim:/var/lib/mysql
+
+    - name: WP erzeugen
+      docker_container:
+        name: heimwebserver
+        image: wordpress:latest
+        state: started
+        ports:
+          - 192.168.178.99:80:80
+        env:
+          WORDPRESS_DB_HOST: heimdatenbank
+          WORDPRESS_DB_NAME: wordpress
+          WORDPRESS_DB_USER: root
+          WORDPRESS_DB_PASSWORD: Schmetterl1ng
+        volumes:
+          - wheim:/var/www/html
+        links:
+          - heimdatenbank:mysql
+
+    - name: PHP erzeugen
+      docker_container:
+        name: heimphpserver
+        image: phpmyadmin:latest
+        state: started
+        ports:
+          - 192.168.178.101:80:80
+        env:
+          PMA_HOST: heimdatenbank
+        links:
+          - heimdatenbank:mysql
